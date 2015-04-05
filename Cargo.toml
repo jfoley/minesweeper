@@ -1,0 +1,4 @@
+[package]
+name = "minesweeper"
+version = "0.0.1"
+authors = ["John Foley <john@hisfoleyness.com>"]
