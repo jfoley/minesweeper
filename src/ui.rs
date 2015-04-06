@@ -1,4 +1,5 @@
 use std::io;
+use std::io::Write;
 
 pub trait Ui {
     fn say(&mut self, buf: &String) -> ();
@@ -10,23 +11,23 @@ pub enum Io {
     Output(String)
 }
 
-// struct RealUi;
-//
-// impl RealUi {
-//     fn new() -> RealUi {
-//         RealUi
-//     }
-// }
-//
-// impl Ui for RealUi {
-//     fn ask(&mut self) -> String {
-//
-//     }
-//
-//     fn say(&mut self, buf: &mut String) -> () {
-//         io::stdin().read_line(buf);
-//     }
-// }
+pub struct RealUi;
+
+impl RealUi {
+    pub fn new() -> RealUi {
+        RealUi
+    }
+}
+
+impl Ui for RealUi {
+    fn say(&mut self, buf: &String) -> () {
+        io::stdout().write(buf.as_bytes());
+    }
+
+    fn ask(&mut self, buf: &mut String) -> () {
+        io::stdin().read_line(buf);
+    }
+}
 
 pub struct MockUi {
     expectations: Vec<Io>,

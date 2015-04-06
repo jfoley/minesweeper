@@ -2,6 +2,7 @@ mod board;
 mod ui;
 use ui::Ui;
 use ui::MockUi;
+use ui::RealUi;
 use ui::Io;
 use board::Board;
 
@@ -10,18 +11,22 @@ fn main() {
     let mut s = String::new();
     board.print(&mut s);
 
-    println!("{}", s)
+    println!("{}", s);
+
+    let mut ui = RealUi::new();
+    menu(&mut ui);
 }
 
-fn print_menu(s: &mut String) {
-    s.push_str("\n");
-    s.push_str("1. flag\n");
-    s.push_str("2. uncover\n");
-    s.push_str("3. quit\n");
+fn print_menu(ui: &mut Ui) {
+    ui.say(&"\n".to_string());
+    ui.say(&"1. flag\n".to_string());
+    ui.say(&"2. uncover\n".to_string());
+    ui.say(&"3. quit\n".to_string());
 }
 
 fn menu(ui: &mut Ui) {
     loop {
+        print_menu(ui);
         let mut input = String::new();
         ui.ask(&mut input);
 
@@ -42,37 +47,38 @@ fn get_coords(ui: &mut Ui) {
 }
 
 #[test]
-fn print_menu_works() {
-    let mut s = String::new();
-    print_menu(&mut s);
-
-    let expected =
-r#"
-1. flag
-2. uncover
-3. quit
-"#;
-    assert_eq!(s, expected)
-}
-
-#[test]
 fn it_can_quit() {
     let mut ui = MockUi::new();
+    menu_expectation(&mut ui);
     ui.expect(Io::Input("3\n".to_string()));
 
     menu(&mut ui as &mut Ui);
     assert!(true)
 }
 
+fn menu_expectation(ui: &mut MockUi) -> () {
+    ui
+        .expect(Io::Output("\n".to_string()))
+        .expect(Io::Output("1. flag\n".to_string()))
+        .expect(Io::Output("2. uncover\n".to_string()))
+        .expect(Io::Output("3. quit\n".to_string()));
+    ()
+}
+
 #[test]
 fn it_can_flag() {
     let mut ui = MockUi::new();
+    menu_expectation(&mut ui);
+
     ui
         .expect(Io::Input("1\n".to_string()))
         .expect(Io::Output("Enter x coordinate:\n".to_string()))
         .expect(Io::Input("1\n".to_string()))
         .expect(Io::Output("Enter y coordinate:\n".to_string()))
-        .expect(Io::Input("1\n".to_string()))
+        .expect(Io::Input("1\n".to_string()));
+
+    menu_expectation(&mut ui);
+    ui
         .expect(Io::Input("3\n".to_string()));
 
     menu(&mut ui as &mut Ui);
