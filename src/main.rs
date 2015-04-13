@@ -7,14 +7,14 @@ use ui::Io;
 use board::Board;
 
 fn main() {
-    let board = Board::new(5, 1);
-    let mut s = String::new();
-    board.print(&mut s);
-
-    println!("{}", s);
-
-    let mut ui = RealUi::new();
-    menu(&mut ui);
+    // let board = Board::new(5, vec![]);
+    // let mut s = String::new();
+    // board.print(&mut s);
+    //
+    // println!("{}", s);
+    //
+    // let mut ui = RealUi::new();
+    // menu(&mut ui);
 }
 
 fn print_menu(ui: &mut Ui) {
