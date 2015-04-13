@@ -6,16 +6,39 @@ use ui::RealUi;
 use ui::Io;
 use board::Board;
 
+extern crate ncurses;
+
 fn main() {
     let board = Board::new(5, 1);
-    let mut s = String::new();
-    board.print(&mut s);
 
-    println!("{}", s);
+    ncurses::setlocale(ncurses::LcCategory::all, "");
+    ncurses::initscr();
+    ncurses::clear();
+    ncurses::mvprintw(1, 4, "Hello 世界!");
+    board.draw();
+    ncurses::refresh();
+    ncurses::getch();
+    ncurses::nodelay(ncurses::stdscr, true); // don't block for input
+    ncurses::noecho(); // don't echo input
 
-    let mut ui = RealUi::new();
-    menu(&mut ui);
+    ncurses::endwin();
 }
+
+impl Board {
+    fn draw(&self) {
+
+    }
+}
+// fn main() {
+//     let board = Board::new(5, 1);
+//     let mut s = String::new();
+//     board.print(&mut s);
+//
+//     println!("{}", s);
+//
+//     let mut ui = RealUi::new();
+//     menu(&mut ui);
+// }
 
 fn print_menu(ui: &mut Ui) {
     ui.say(&"\n".to_string());
