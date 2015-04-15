@@ -71,10 +71,11 @@ impl Board {
                     score: 0,
                 };
 
+
                 let mine = mines.iter().find(|m| *m == &Point{x: x, y: y});
                 match mine {
                     Some(mine) => cell.mine = true,
-                    None => {},
+                    None => cell.score = Board::score(&mines, cells.len(), x, y),
                 }
 
                 cell_row.push(cell);
@@ -83,39 +84,27 @@ impl Board {
             cells.push(cell_row);
         }
 
-        for y in 0..size {
-            for x in 0..size {
-                let cell = cells[x][y];
+        Board{cells: cells}
+    }
 
-                if cell.mine {
+    fn score(mines: &Vec<Point>, size: usize, x: usize, y: usize) -> usize {
+        let mut score = 0;
+        for i in -1..2 {
+            for k in -1..2 {
+                let ux = x as isize + i;
+                let uy = y as isize + k;
+
+                if !Board::within_bounds(size, ux, uy) && !(ux == 0 && uy == 0){
                     continue;
                 }
 
-                let mut neighbor_mine_count = 0;
-                for i in -1..2 {
-                    for k in -1..2 {
-                        let ux = x as isize + i;
-                        let uy = y as isize + k;
-
-                        if !Board::within_bounds(size, ux, uy) {
-                            continue;
-                        }
-
-                        let neighbor = cells[ux as usize][uy as usize];
-                        if neighbor.mine {
-                            neighbor_mine_count += 1;
-                        }
-                    }
+                if mines.iter().any(|m| *m == Point{x: ux as usize, y: uy as usize}) {
+                    score += 1;
                 }
-                let mut cell = &mut cells[x][y];
-
-                cell.score = neighbor_mine_count;
-
-                println!("cell {} {} has score: {}", x, y, cell.score);
             }
         }
 
-        Board{cells: cells}
+        score
     }
 
     fn uncover(&mut self, x: usize, y: usize) -> bool {
