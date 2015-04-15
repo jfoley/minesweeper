@@ -92,30 +92,32 @@ impl Board {
         for i in -1..2 {
             for k in -1..2 {
                 if !(i == 0 && k == 0) {
-                    self.show(x as isize + i, y as isize + k)
+                    let ux = x as isize + i;
+                    let uy = y as isize + k;
+
+                    if !self.within_bounds(ux, uy) {
+                        continue;
+                    }
+
+                    self.show(ux as usize, uy as usize);
                 }
             }
         }
     }
 
-    fn show(&mut self, x: isize, y: isize) {
-        if !self.within_bounds(x, y) {
-            return;
+    fn show(&mut self, x: usize, y: usize) {
+        if self.show_cell(x, y) {
+            self.uncover_neighbors(x, y);
         }
+    }
 
-        let mut check_neighbors = false;
-        {
-            let mut cell = &mut self.cells[x as usize][y as usize];
-            if !cell.visible && !cell.mine {
-                // cell.make_visible();
-                cell.visible = true;
-                // println!("visible: {}", self.cell_at(x as usize, y as usize).visible)
-                check_neighbors = true;
-            }
-        }
-
-        if check_neighbors {
-            self.uncover_neighbors(x as usize, y as usize);
+    fn show_cell(&mut self, x: usize, y: usize) -> bool {
+        let mut cell = &mut self.cells[x][y];
+        if !cell.visible && !cell.mine {
+            cell.make_visible();
+            true
+        } else {
+            false
         }
     }
 
