@@ -41,10 +41,11 @@ impl Point {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Cell {
     mine: bool,
     visible: bool,
+    score: usize,
 }
 
 impl Cell {
@@ -59,22 +60,62 @@ pub struct Board {
 
 impl Board {
     fn new(size: usize, mines: Vec<Point>) -> Board {
-        let mut rows = Vec::with_capacity(size);
+        let mut cells = Vec::with_capacity(size);
         for y in 0..size {
-            let mut cells = Vec::with_capacity(size);
+            let mut cell_row = Vec::with_capacity(size);
 
             for x in 0..size {
-                cells.push(Cell{mine: false, visible: false});
+                let mut cell = Cell{
+                    mine: false,
+                    visible: false,
+                    score: 0,
+                };
+
+                let mine = mines.iter().find(|m| *m == &Point{x: x, y: y});
+                match mine {
+                    Some(mine) => cell.mine = true,
+                    None => {},
+                }
+
+                cell_row.push(cell);
             }
 
-            rows.push(cells);
+            cells.push(cell_row);
         }
 
-        for mine in mines.iter() {
-            rows[mine.x][mine.y].mine = true;
+        for y in 0..size {
+            for x in 0..size {
+                let cell = cells[x][y];
+
+                if cell.mine {
+                    continue;
+                }
+
+                let mut neighbor_mine_count = 0;
+                for i in -1..2 {
+                    for k in -1..2 {
+                        let ux = x as isize + i;
+                        let uy = y as isize + k;
+
+                        if !Board::within_bounds(size, ux, uy) {
+                            continue;
+                        }
+
+                        let neighbor = cells[ux as usize][uy as usize];
+                        if neighbor.mine {
+                            neighbor_mine_count += 1;
+                        }
+                    }
+                }
+                let mut cell = &mut cells[x][y];
+
+                cell.score = neighbor_mine_count;
+
+                println!("cell {} {} has score: {}", x, y, cell.score);
+            }
         }
 
-        Board{cells: rows}
+        Board{cells: cells}
     }
 
     fn uncover(&mut self, x: usize, y: usize) -> bool {
@@ -95,7 +136,7 @@ impl Board {
                     let ux = x as isize + i;
                     let uy = y as isize + k;
 
-                    if !self.within_bounds(ux, uy) {
+                    if !Board::within_bounds(self.cells.len(), ux, uy) {
                         continue;
                     }
 
@@ -121,9 +162,8 @@ impl Board {
         }
     }
 
-    fn within_bounds(&self, x: isize, y: isize) -> bool {
-        let max = self.cells.len() as isize;
-        x >= 0 && x < max && y >= 0 && y < max
+    fn within_bounds(size: usize, x: isize, y: isize) -> bool {
+        x >= 0 && x < size as isize && y >= 0 && y < size as isize
     }
 }
 
@@ -164,6 +204,26 @@ fn recursively_uncovering_tiles() {
     assert_eq!(is_mine, false);
     assert_eq!(board.cell_at(0, 0).visible, false);
     assert_eq!(board.cell_at(1, 0).visible, true);
-    assert_eq!(board.cell_at(1, 1).visible, true);
+    assert_eq!(board.cell_at(0, 1).visible, true);
     assert_eq!(board.cell_at(1, 1).visible, true)
+}
+
+#[test]
+fn scores() {
+    let mines = vec![
+        Point{x: 0, y: 0},
+    ];
+
+    let mut board = Board::new(2, mines);
+
+    for y in 0..2 {
+        for x in 0..2 {
+            println!("{:?}", board.cells[x][y]);
+        }
+    }
+
+    assert_eq!(board.cell_at(0, 0).score, 0);
+    assert_eq!(board.cell_at(1, 0).score, 1);
+    assert_eq!(board.cell_at(0, 1).score, 1);
+    assert_eq!(board.cell_at(1, 1).score, 1)
 }
