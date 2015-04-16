@@ -14,12 +14,6 @@ pub struct Cell {
     score: usize,
 }
 
-impl Cell {
-    fn make_visible(&mut self) {
-        self.visible = true
-    }
-}
-
 pub struct Board {
     cells: Vec<Vec<Cell>>
 }
@@ -59,6 +53,17 @@ impl Board {
 
     fn score(mines: &Vec<Point>, size: usize, x: usize, y: usize) -> usize {
         let mut score = 0;
+
+        for n in Board::neighbors(size, x, y).iter() {
+            if mines.iter().any(|m| m == n) {
+                score += 1;
+            }
+        }
+
+        score
+    }
+
+    fn neighbors(size: usize, x: usize, y: usize) -> Vec<Point> {
         let mut neighbors = Vec::new();
 
         for k in -1..2 {
@@ -67,22 +72,16 @@ impl Board {
                     continue;
                 }
 
-                let ux = x as isize + i;
-                let uy = y as isize + k;
+                let ix = x as isize + i;
+                let iy = y as isize + k;
 
-                if Board::within_bounds(size, ux, uy) {
-                    neighbors.push(Point{x: ux as usize, y: uy as usize});
+                if Board::within_bounds(size, ix, iy) {
+                    neighbors.push(Point{x: ix as usize, y: iy as usize});
                 }
             }
         }
 
-        for n in neighbors.iter() {
-            if mines.iter().any(|m| m == n) {
-                score += 1;
-            }
-        }
-
-        score
+        neighbors
     }
 
     fn uncover(&mut self, x: usize, y: usize) -> bool {
@@ -99,32 +98,17 @@ impl Board {
     }
 
     fn uncover_neighbors(&mut self, x: usize, y: usize) {
-        for i in -1..2 {
-            for k in -1..2 {
-                if !(i == 0 && k == 0) {
-                    let ux = x as isize + i;
-                    let uy = y as isize + k;
-
-                    if !Board::within_bounds(self.cells.len() - 1, ux, uy) {
-                        continue;
-                    }
-
-                    self.show(ux as usize, uy as usize);
-                }
+        for n in Board::neighbors(self.cells.len() - 1, x, y).iter() {
+            if self.show_cell(n.x, n.y) {
+                self.uncover_neighbors(n.x, n.y);
             }
-        }
-    }
-
-    fn show(&mut self, x: usize, y: usize) {
-        if self.show_cell(x, y) {
-            self.uncover_neighbors(x, y);
         }
     }
 
     fn show_cell(&mut self, x: usize, y: usize) -> bool {
         let mut cell = &mut self.cells[x][y];
         if !cell.visible && !cell.mine {
-            cell.make_visible();
+            cell.visible = true;
             true
         } else {
             false
@@ -202,7 +186,6 @@ fn recursively_uncovering_tiles() {
     assert_eq!(board.cell_at(2, 2).visible, true);
 }
 
-
 #[test]
 fn scores() {
     let mines = vec![
@@ -242,9 +225,8 @@ fn more_scores() {
 fn within_bounds_works() {
     assert_eq!(Board::within_bounds(3, -1, -1), false);
     assert_eq!(Board::within_bounds(3, 2, 2), true);
-    // assert_eq!(Board::within_bounds(3, 3, 3), false);
+    assert_eq!(Board::within_bounds(3, 3, 3), true);
 }
-
 
 #[test]
 fn calculate_score() {
