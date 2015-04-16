@@ -87,7 +87,9 @@ impl Board {
 
     fn uncover(&mut self, x: usize, y: usize) -> bool {
         self.cells[x][y].visible = true;
-        self.uncover_neighbors(x, y);
+        if self.cells[x][y].score == 0 {
+            self.uncover_neighbors(x, y);
+        }
 
         self.cells[x][y].mine
     }
@@ -164,7 +166,7 @@ fn uncovering_tiles() {
 }
 
 #[test]
-fn recursively_uncovering_tiles() {
+fn uncovering_tiles_with_scores() {
     let mines = vec![
         Point{x: 0, y: 0},
     ];
@@ -175,9 +177,31 @@ fn recursively_uncovering_tiles() {
     assert_eq!(is_mine, false);
     assert_eq!(board.cell_at(0, 0).visible, false);
     assert_eq!(board.cell_at(1, 0).visible, true);
-    assert_eq!(board.cell_at(0, 1).visible, true);
-    assert_eq!(board.cell_at(1, 1).visible, true)
+    assert_eq!(board.cell_at(0, 1).visible, false);
+    assert_eq!(board.cell_at(1, 1).visible, false)
 }
+
+#[test]
+fn recursively_uncovering_tiles() {
+    let mines = vec![
+        Point{x: 0, y: 0},
+    ];
+
+    let mut board = Board::new(3, mines);
+
+    let is_mine = board.uncover(2, 2);
+    assert_eq!(is_mine, false);
+    assert_eq!(board.cell_at(0, 0).visible, false);
+    assert_eq!(board.cell_at(0, 1).visible, true);
+    assert_eq!(board.cell_at(0, 2).visible, true);
+    assert_eq!(board.cell_at(1, 0).visible, true);
+    assert_eq!(board.cell_at(1, 1).visible, true);
+    assert_eq!(board.cell_at(1, 2).visible, true);
+    assert_eq!(board.cell_at(2, 0).visible, true);
+    assert_eq!(board.cell_at(2, 1).visible, true);
+    assert_eq!(board.cell_at(2, 2).visible, true);
+}
+
 
 #[test]
 fn scores() {
