@@ -7,40 +7,6 @@ struct Point {
     y: usize,
 }
 
-impl Point {
-    fn left(self) -> Point {
-        Point{x: self.x - 1, y: self.y }
-    }
-
-    fn top_left(self) -> Point {
-        Point{x: self.x - 1, y: self.y - 1 }
-    }
-
-    fn top_right(self) -> Point {
-        Point{x: self.x + 1, y: self.y - 1 }
-    }
-
-    fn top(self) -> Point {
-        Point{x: self.x , y: self.y - 1 }
-    }
-
-    fn right(self) -> Point {
-        Point{x: self.x + 1, y: self.y }
-    }
-
-    fn bottom_right(self) -> Point {
-        Point{x: self.x + 1, y: self.y  + 1 }
-    }
-
-    fn bottom(self) -> Point {
-        Point{x: self.x, y: self.y + 1 }
-    }
-
-    fn bottom_left(self) -> Point {
-        Point{x: self.x - 1, y: self.y + 1 }
-    }
-}
-
 #[derive(Copy, Clone, Debug)]
 pub struct Cell {
     mine: bool,
@@ -87,20 +53,32 @@ impl Board {
         Board{cells: cells}
     }
 
+    fn within_bounds(size: usize, x: isize, y: isize) -> bool {
+        x >= 0 && x <= size as isize && y >= 0 && y <= size as isize
+    }
+
     fn score(mines: &Vec<Point>, size: usize, x: usize, y: usize) -> usize {
         let mut score = 0;
-        for i in -1..2 {
-            for k in -1..2 {
-                let ux = x as isize + i;
-                let uy = y as isize + k;
+        let mut neighbors = Vec::new();
 
-                if !Board::within_bounds(size, ux, uy) && !(ux == 0 && uy == 0){
+        for k in -1..2 {
+            for i in -1..2 {
+                if i == 0 && k == 0 {
                     continue;
                 }
 
-                if mines.iter().any(|m| *m == Point{x: ux as usize, y: uy as usize}) {
-                    score += 1;
+                let ux = x as isize + i;
+                let uy = y as isize + k;
+
+                if Board::within_bounds(size, ux, uy) {
+                    neighbors.push(Point{x: ux as usize, y: uy as usize});
                 }
+            }
+        }
+
+        for n in neighbors.iter() {
+            if mines.iter().any(|m| m == n) {
+                score += 1;
             }
         }
 
@@ -125,7 +103,7 @@ impl Board {
                     let ux = x as isize + i;
                     let uy = y as isize + k;
 
-                    if !Board::within_bounds(self.cells.len(), ux, uy) {
+                    if !Board::within_bounds(self.cells.len() - 1, ux, uy) {
                         continue;
                     }
 
@@ -151,8 +129,12 @@ impl Board {
         }
     }
 
-    fn within_bounds(size: usize, x: isize, y: isize) -> bool {
-        x >= 0 && x < size as isize && y >= 0 && y < size as isize
+    fn print(&self) {
+        for y in 0..self.cells.len() {
+            for x in 0..self.cells.len() {
+                println!("({}, {}) {:?}", x, y, self.cells[x][y])
+            }
+        }
     }
 }
 
@@ -205,14 +187,46 @@ fn scores() {
 
     let mut board = Board::new(2, mines);
 
-    for y in 0..2 {
-        for x in 0..2 {
-            println!("{:?}", board.cells[x][y]);
-        }
-    }
-
     assert_eq!(board.cell_at(0, 0).score, 0);
     assert_eq!(board.cell_at(1, 0).score, 1);
     assert_eq!(board.cell_at(0, 1).score, 1);
     assert_eq!(board.cell_at(1, 1).score, 1)
+}
+
+#[test]
+fn more_scores() {
+    let mines = vec![
+        Point{x: 0, y: 0},
+        Point{x: 1, y: 1},
+    ];
+
+    let mut board = Board::new(3, mines);
+    board.print();
+
+    assert_eq!(board.cell_at(0, 0).score, 0);
+    assert_eq!(board.cell_at(1, 0).score, 2);
+    assert_eq!(board.cell_at(2, 0).score, 1);
+    assert_eq!(board.cell_at(0, 1).score, 1);
+    assert_eq!(board.cell_at(1, 1).score, 0);
+    assert_eq!(board.cell_at(2, 1).score, 1);
+    assert_eq!(board.cell_at(0, 2).score, 0);
+    assert_eq!(board.cell_at(1, 2).score, 1);
+    assert_eq!(board.cell_at(2, 2).score, 1)
+}
+
+#[test]
+fn within_bounds_works() {
+    assert_eq!(Board::within_bounds(3, -1, -1), false);
+    assert_eq!(Board::within_bounds(3, 2, 2), true);
+    // assert_eq!(Board::within_bounds(3, 3, 3), false);
+}
+
+
+#[test]
+fn calculate_score() {
+    let mines = vec![
+        Point{x: 0, y: 0},
+    ];
+
+    assert_eq!(Board::score(&mines, 2, 1, 0), 1);
 }
