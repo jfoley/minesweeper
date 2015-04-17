@@ -94,7 +94,9 @@ impl<'a> BoardWriter<'a> {
         if !cell.visible {
             self.write(".".to_string());
         } else {
-            if cell.score > 0 {
+            if cell.mine {
+                self.write("*".to_string());
+            } else if cell.score > 0 {
                 self.write(cell.score.to_string());
             } else {
                 self.write(" ".to_string());
@@ -215,6 +217,21 @@ fn test_print_zero_cell() {
     }
 
     assert_eq!(cursor.into_string(), " ");
+}
+
+#[test]
+fn test_print_mine_cell() {
+    let cell = Cell{mine: true, visible: true, score: 0};
+
+    let mut cursor: Cursor<Vec<u8>> = Cursor::new(Vec::new());
+
+    {
+        let board = Board::new(5, vec![]);
+        let mut writer = BoardWriter::new(&board, &mut cursor as &mut Write);
+        writer.print_cell(cell);
+    }
+
+    assert_eq!(cursor.into_string(), "*");
 }
 
 #[test]
