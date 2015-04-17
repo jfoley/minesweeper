@@ -24,11 +24,21 @@ impl<'a> BoardWriter<'a> {
         BoardWriter{board: board, writer: writer}
     }
 
+    pub fn print(&mut self) {
+        self.print_header();
+
+        for y in 0..self.board.size() {
+            self.print_row(y);
+        }
+
+        self.print_footer();
+    }
+
     fn write(&mut self, string: String) {
         self.writer.write(&string.into_bytes()).unwrap();
     }
 
-    fn print_header(&mut self) -> () {
+    fn print_header(&mut self) {
         self.write(TOP_LEFT.to_string());
 
         for i in 0..self.board.size() {
@@ -51,7 +61,7 @@ impl<'a> BoardWriter<'a> {
         self.write("\n".to_string());
     }
 
-    fn print_footer(&mut self) -> () {
+    fn print_footer(&mut self) {
         self.write(BOTTOM_LEFT.to_string());
 
         for i in 0..self.board.size() {
@@ -64,7 +74,7 @@ impl<'a> BoardWriter<'a> {
         self.write("\n".to_string());
     }
 
-    fn print_row(&mut self, y: usize) -> () {
+    fn print_row(&mut self, y: usize) {
         self.write(MID.to_string());
         self.write((y + 1).to_string());
 
@@ -151,8 +161,6 @@ fn test_print_row() {
     board.uncover(1, 0);
 
     let mut cursor: Cursor<Vec<u8>> = Cursor::new(Vec::new());
-    let mut stdout = std::io::stdout();
-
     {
         let mut writer = BoardWriter::new(&board, &mut cursor as &mut Write);
         writer.print_row(0);
@@ -189,4 +197,29 @@ fn test_print_scored_cell() {
     }
 
     assert_eq!(cursor.into_string(), "8");
+}
+
+#[test]
+fn test_print() {
+    let mut board = Board::new(5, vec![]);
+
+    let mut cursor: Cursor<Vec<u8>> = Cursor::new(Vec::new());
+
+    {
+        let mut writer = BoardWriter::new(&board, &mut cursor as &mut Write);
+        writer.print();
+    }
+    let expected =
+
+ r#"┌─┬─┬─┬─┬─┬─┐
+│ │1│2│3│4│5│
+│1│.│.│.│.│.│
+│2│.│.│.│.│.│
+│3│.│.│.│.│.│
+│4│.│.│.│.│.│
+│5│.│.│.│.│.│
+└─┴─┴─┴─┴─┴─┘
+"#;
+
+    assert_eq!(cursor.into_string(), expected);
 }
