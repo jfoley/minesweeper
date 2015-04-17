@@ -28,26 +28,39 @@ impl<'a> BoardWriter<'a> {
     }
 
     pub fn print_header(&mut self) -> () {
-        self.writer.write(TOP_LEFT.as_bytes());
+        self.write(TOP_LEFT.to_string());
 
         for i in 0..self.board.size() {
-            self.writer.write(TOP.as_bytes());
-            self.writer.write(TOP_MID.as_bytes());
+            self.write(TOP.to_string());
+            self.write(TOP_MID.to_string());
         }
 
-        self.writer.write(TOP.as_bytes());
-        self.writer.write(TOP_RIGHT.as_bytes());
-        self.writer.write("\n".as_bytes());
+        self.write(TOP.to_string());
+        self.write(TOP_RIGHT.to_string());
+        self.write("\n".to_string());
 
-        self.writer.write(MID.as_bytes());
-        self.writer.write(" ".as_bytes());
+        self.write(MID.to_string());
+        self.write(" ".to_string());
 
         for i in 0..self.board.size() {
-            self.writer.write(MID.as_bytes());
-            self.writer.write(&(i + 1).to_string().as_bytes());
+            self.write(MID.to_string());
+            self.write((i + 1).to_string());
         }
-        self.writer.write(MID.as_bytes());
-        self.writer.write("\n".as_bytes());
+        self.write(MID.to_string());
+        self.write("\n".to_string());
+    }
+
+    pub fn print_footer(&mut self) -> () {
+        self.write(BOTTOM_LEFT.to_string());
+
+        for i in 0..self.board.size() {
+            self.write(BOTTOM.to_string());
+            self.write(BOTTOM_MID.to_string());
+        }
+
+        self.write(BOTTOM.to_string());
+        self.write(BOTTOM_RIGHT.to_string());
+        self.write("\n".to_string());
     }
 }
 
@@ -88,4 +101,17 @@ fn test_print_header() {
     }
 
     assert_eq!(cursor.into_string(), "┌─┬─┬─┬─┬─┬─┐\n│ │1│2│3│4│5│\n");
+}
+
+#[test]
+fn test_print_footer() {
+    let board = Board::new(5, vec![]);
+    let mut cursor: Cursor<Vec<u8>> = Cursor::new(Vec::new());
+
+    {
+        let mut writer = BoardWriter::new(&board, &mut cursor as &mut Write);
+        writer.print_footer();
+    }
+
+    assert_eq!(cursor.into_string(), "└─┴─┴─┴─┴─┴─┘\n");
 }
