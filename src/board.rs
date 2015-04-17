@@ -90,7 +90,7 @@ impl Board {
 
     pub fn uncover(&mut self, x: usize, y: usize) -> bool {
         self.cells[x][y].visible = true;
-        if self.cells[x][y].score == 0 {
+        if self.cells[x][y].score == 0 && !self.cells[x][y].mine {
             self.uncover_neighbors(x, y);
         }
 
@@ -141,6 +141,21 @@ fn uncovering_tiles() {
     assert_eq!(is_mine, false);
     assert_eq!(board.cell_at(0, 0).visible, false);
     assert_eq!(board.cell_at(1, 0).visible, true);
+    assert_eq!(board.cell_at(1, 1).visible, false);
+    assert_eq!(board.cell_at(1, 1).visible, false)
+}
+
+#[test]
+fn uncovering_a_mine() {
+    let mines = vec![
+        Point{x: 0, y: 0},
+    ];
+    let mut board = Board::new(2, mines);
+
+    let is_mine = board.uncover(0, 0);
+    assert_eq!(is_mine, true);
+    assert_eq!(board.cell_at(0, 0).visible, true);
+    assert_eq!(board.cell_at(1, 0).visible, false);
     assert_eq!(board.cell_at(1, 1).visible, false);
     assert_eq!(board.cell_at(1, 1).visible, false)
 }
