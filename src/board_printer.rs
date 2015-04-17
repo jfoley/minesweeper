@@ -62,6 +62,21 @@ impl<'a> BoardWriter<'a> {
         self.write(BOTTOM_RIGHT.to_string());
         self.write("\n".to_string());
     }
+
+    fn print_row(&mut self, y: usize) -> () {
+        self.write(MID.to_string());
+        self.write((y + 1).to_string());
+
+        for i in 0..self.board.size() {
+            self.write(MID.to_string());
+            self.write(".".to_string());
+            // s.push_str(&self.print_cell(i, row));
+
+        }
+
+        self.write(MID.to_string());
+        self.write("\n".to_string());
+    }
 }
 
 trait TestHelper {
@@ -114,4 +129,17 @@ fn test_print_footer() {
     }
 
     assert_eq!(cursor.into_string(), "└─┴─┴─┴─┴─┴─┘\n");
+}
+
+#[test]
+fn test_print_row() {
+    let board = Board::new(5, vec![]);
+    let mut cursor: Cursor<Vec<u8>> = Cursor::new(Vec::new());
+
+    {
+        let mut writer = BoardWriter::new(&board, &mut cursor as &mut Write);
+        writer.print_row(0);
+    }
+
+    assert_eq!(cursor.into_string(), "│1│.│.│.│.│.│\n");
 }
