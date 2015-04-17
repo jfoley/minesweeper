@@ -2,16 +2,16 @@ extern crate rand;
 use self::rand::Rng;
 
 #[derive(PartialEq, Debug)]
-struct Point {
-    x: usize,
-    y: usize,
+pub struct Point {
+    pub x: usize,
+    pub y: usize,
 }
 
 #[derive(Copy, Clone, Debug)]
 pub struct Cell {
-    mine: bool,
-    visible: bool,
-    score: usize,
+    pub mine: bool,
+    pub visible: bool,
+    pub score: usize,
 }
 
 pub struct Board {
@@ -19,7 +19,7 @@ pub struct Board {
 }
 
 impl Board {
-    fn new(size: usize, mines: Vec<Point>) -> Board {
+    pub fn new(size: usize, mines: Vec<Point>) -> Board {
         let mut cells = Vec::with_capacity(size);
         for y in 0..size {
             let mut cell_row = Vec::with_capacity(size);
@@ -45,6 +45,10 @@ impl Board {
         }
 
         Board{cells: cells}
+    }
+
+    pub fn size(&self) -> usize {
+        self.cells.len()
     }
 
     fn within_bounds(size: usize, x: isize, y: isize) -> bool {
@@ -84,7 +88,7 @@ impl Board {
         neighbors
     }
 
-    fn uncover(&mut self, x: usize, y: usize) -> bool {
+    pub fn uncover(&mut self, x: usize, y: usize) -> bool {
         self.cells[x][y].visible = true;
         if self.cells[x][y].score == 0 {
             self.uncover_neighbors(x, y);
@@ -93,7 +97,7 @@ impl Board {
         self.cells[x][y].mine
     }
 
-    fn cell_at(&self, x: usize, y: usize) -> Cell {
+    pub fn cell_at(&self, x: usize, y: usize) -> Cell {
         self.cells[x][y]
     }
 
@@ -112,14 +116,6 @@ impl Board {
             true
         } else {
             false
-        }
-    }
-
-    fn print(&self) {
-        for y in 0..self.cells.len() {
-            for x in 0..self.cells.len() {
-                println!("({}, {}) {:?}", x, y, self.cells[x][y])
-            }
         }
     }
 }
@@ -208,7 +204,6 @@ fn more_scores() {
     ];
 
     let mut board = Board::new(3, mines);
-    board.print();
 
     assert_eq!(board.cell_at(0, 0).score, 0);
     assert_eq!(board.cell_at(1, 0).score, 2);
