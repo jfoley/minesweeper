@@ -28,7 +28,17 @@ impl<'a> BoardWriter<'a> {
         self.print_header();
 
         for y in 0..self.board.size() {
-            self.print_row(y);
+            self.print_row(y, false);
+        }
+
+        self.print_footer();
+    }
+
+    pub fn print_solution(&mut self) {
+        self.print_header();
+
+        for i in 0..self.board.size() {
+            self.print_row(i, true);
         }
 
         self.print_footer();
@@ -74,7 +84,7 @@ impl<'a> BoardWriter<'a> {
         self.write("\n".to_string());
     }
 
-    fn print_row(&mut self, y: usize) {
+    pub fn print_row(&mut self, y: usize, solution: bool) {
         self.write(MID.to_string());
         self.write((y + 1).to_string());
 
@@ -82,7 +92,7 @@ impl<'a> BoardWriter<'a> {
             self.write(MID.to_string());
 
             let cell = self.board.cell_at(x, y);
-            self.print_cell(cell);
+            self.print_cell(cell, solution);
 
         }
 
@@ -90,10 +100,8 @@ impl<'a> BoardWriter<'a> {
         self.write("\n".to_string());
     }
 
-    fn print_cell(&mut self, cell: Cell) {
-        if !cell.visible {
-            self.write(".".to_string());
-        } else {
+    fn print_cell(&mut self, cell: Cell, solution: bool) {
+        if solution {
             if cell.mine {
                 self.write("*".to_string());
             } else if cell.score > 0 {
@@ -101,6 +109,19 @@ impl<'a> BoardWriter<'a> {
             } else {
                 self.write(" ".to_string());
             }
+            return;
+        }
+
+        if cell.flagged {
+            self.write(FLAGGED.to_string());
+        } else if !cell.visible {
+            self.write(UNREVEALED.to_string());
+        } else if cell.mine {
+            self.write(MINE.to_string());
+        } else if cell.score > 0 {
+            self.write(format!("{} ", cell.score.to_string()));
+        } else {
+            self.write(EMPTY.to_string());
         }
     }
 }
@@ -168,7 +189,7 @@ fn test_print_row() {
     let mut cursor: Cursor<Vec<u8>> = Cursor::new(Vec::new());
     {
         let mut writer = BoardWriter::new(&board, &mut cursor as &mut Write);
-        writer.print_row(0);
+        writer.print_row(0, false);
     }
 
     assert_eq!(cursor.into_string(), "│1│.│1│.│.│.│\n");
@@ -183,7 +204,7 @@ fn test_print_hidden_cell() {
     {
         let board = Board::new(5, vec![]);
         let mut writer = BoardWriter::new(&board, &mut cursor as &mut Write);
-        writer.print_cell(cell);
+        writer.print_cell(cell, false);
     }
 
     assert_eq!(cursor.into_string(), ".");
@@ -198,7 +219,7 @@ fn test_print_scored_cell() {
     {
         let board = Board::new(5, vec![]);
         let mut writer = BoardWriter::new(&board, &mut cursor as &mut Write);
-        writer.print_cell(cell);
+        writer.print_cell(cell, false);
     }
 
     assert_eq!(cursor.into_string(), "8");
@@ -213,7 +234,7 @@ fn test_print_zero_cell() {
     {
         let board = Board::new(5, vec![]);
         let mut writer = BoardWriter::new(&board, &mut cursor as &mut Write);
-        writer.print_cell(cell);
+        writer.print_cell(cell, false);
     }
 
     assert_eq!(cursor.into_string(), " ");
@@ -228,7 +249,7 @@ fn test_print_mine_cell() {
     {
         let board = Board::new(5, vec![]);
         let mut writer = BoardWriter::new(&board, &mut cursor as &mut Write);
-        writer.print_cell(cell);
+        writer.print_cell(cell, false);
     }
 
     assert_eq!(cursor.into_string(), "*");
@@ -254,6 +275,36 @@ fn test_print() {
 │4│.│.│.│.│.│
 │5│.│.│.│.│.│
 └─┴─┴─┴─┴─┴─┘
+
+    assert_eq!(cursor.into_string(), expected);
+}
+
+#[test]
+fn test_print_solution() {
+    let mut board = Board::new(5, vec![
+        Point{x: 0, y: 0},
+        Point{x: 1, y: 1},
+        Point{x: 2, y: 2},
+        Point{x: 3, y: 3},
+        Point{x: 4, y: 4},
+    ]);
+
+    let mut cursor: Cursor<Vec<u8>> = Cursor::new(Vec::new());
+
+    {
+        let mut stdout = std::io::stdout();
+        let mut writer = BoardWriter::new(&board, &mut cursor as &mut Write);
+        writer.print_solution();
+    }
+    let expected =
+r#"┌──┬──┬──┬──┬──┬──┐
+│  │1 │2 │3 │4 │5 │
+│1 │💣 │2 │1 │  │  │
+│2 │2 │💣 │2 │1 │  │
+│3 │1 │2 │💣 │2 │1 │
+│4 │  │1 │2 │💣 │2 │
+│5 │  │  │1 │2 │💣 │
+└──┴──┴──┴──┴──┴──┘
 "#;
 
     assert_eq!(cursor.into_string(), expected);
