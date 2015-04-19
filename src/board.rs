@@ -37,7 +37,7 @@ impl Board {
                 let mine = mines.iter().find(|m| *m == &Point{x: x, y: y});
                 match mine {
                     Some(mine) => cell.mine = true,
-                    None => cell.score = Board::score(&mines, cells.len(), x, y),
+                    None => cell.score = Board::score(&mines, size, x, y),
                 }
 
                 cell_row.push(cell);
