@@ -54,7 +54,7 @@ impl Board {
     }
 
     fn within_bounds(size: usize, x: isize, y: isize) -> bool {
-        x >= 0 && x <= size as isize && y >= 0 && y <= size as isize
+        x >= 0 && x < size as isize && y >= 0 && y < size as isize
     }
 
     fn score(mines: &Vec<Point>, size: usize, x: usize, y: usize) -> usize {
@@ -104,7 +104,7 @@ impl Board {
     }
 
     fn uncover_neighbors(&mut self, x: usize, y: usize) {
-        for n in Board::neighbors(self.cells.len() - 1, x, y).iter() {
+        for n in Board::neighbors(self.cells.len(), x, y).iter() {
             if self.show_cell(n.x, n.y) {
                 self.uncover_neighbors(n.x, n.y);
             }
@@ -207,10 +207,10 @@ fn scores() {
 
     let mut board = Board::new(2, mines);
 
-    assert_eq!(board.cell_at(0, 0).score, 0);
-    assert_eq!(board.cell_at(1, 0).score, 1);
-    assert_eq!(board.cell_at(0, 1).score, 1);
-    assert_eq!(board.cell_at(1, 1).score, 1)
+    assert_eq!(board.cells[0][0].score, 0);
+    assert_eq!(board.cells[0][1].score, 1);
+    assert_eq!(board.cells[1][0].score, 1);
+    assert_eq!(board.cells[1][1].score, 1);
 }
 
 #[test]
@@ -225,10 +225,10 @@ fn more_scores() {
     assert_eq!(board.cell_at(0, 0).score, 0);
     assert_eq!(board.cell_at(1, 0).score, 2);
     assert_eq!(board.cell_at(2, 0).score, 1);
-    assert_eq!(board.cell_at(0, 1).score, 1);
+    assert_eq!(board.cell_at(0, 1).score, 2);
     assert_eq!(board.cell_at(1, 1).score, 0);
     assert_eq!(board.cell_at(2, 1).score, 1);
-    assert_eq!(board.cell_at(0, 2).score, 0);
+    assert_eq!(board.cell_at(0, 2).score, 1);
     assert_eq!(board.cell_at(1, 2).score, 1);
     assert_eq!(board.cell_at(2, 2).score, 1)
 }
@@ -237,14 +237,96 @@ fn more_scores() {
 fn within_bounds_works() {
     assert_eq!(Board::within_bounds(3, -1, -1), false);
     assert_eq!(Board::within_bounds(3, 2, 2), true);
-    assert_eq!(Board::within_bounds(3, 3, 3), true);
+    assert_eq!(Board::within_bounds(3, 3, 3), false);
 }
 
 #[test]
 fn calculate_score() {
     let mines = vec![
-        Point{x: 0, y: 0},
+        Point{x: 1, y: 1},
     ];
 
+    assert_eq!(Board::score(&mines, 2, 0, 0), 1);
+    assert_eq!(Board::score(&mines, 2, 0, 1), 1);
+    assert_eq!(Board::score(&mines, 2, 0, 2), 1);
     assert_eq!(Board::score(&mines, 2, 1, 0), 1);
+    assert_eq!(Board::score(&mines, 2, 1, 2), 1);
+    assert_eq!(Board::score(&mines, 2, 2, 0), 1);
+    assert_eq!(Board::score(&mines, 2, 2, 1), 1);
+    assert_eq!(Board::score(&mines, 2, 2, 2), 1);
+
+    let mines = vec![
+        Point{x: 0, y: 0},
+        Point{x: 1, y: 1},
+    ];
+
+    assert_eq!(Board::score(&mines, 2, 1, 0), 2);
+    assert_eq!(Board::score(&mines, 2, 0, 1), 2);
+}
+
+#[test]
+fn neighbors_works() {
+    let expected = vec![
+        Point{x: 1, y: 0},
+        Point{x: 0, y: 1},
+        Point{x: 1, y: 1},
+    ];
+
+    let neighbors = Board::neighbors(2, 0, 0);
+    assert_eq!(neighbors, expected);
+
+    let expected = vec![
+        Point{x: 0, y: 0},
+        Point{x: 0, y: 1},
+        Point{x: 1, y: 1},
+    ];
+
+    let neighbors = Board::neighbors(2, 1, 0);
+    assert_eq!(neighbors, expected);
+
+    let expected = vec![
+        Point{x: 0, y: 0},
+        Point{x: 2, y: 0},
+        Point{x: 0, y: 1},
+        Point{x: 1, y: 1},
+        Point{x: 2, y: 1},
+    ];
+
+    let neighbors = Board::neighbors(3, 1, 0);
+    assert_eq!(neighbors, expected);
+}
+
+#[test]
+fn complicated_scores() {
+let expected =
+r#"┌──┬──┬──┬──┬──┬──┐
+│  │1 │2 │3 │4 │5 │
+│1 │1 │1 │1 │1 │1 │
+│2 │💣 │3 │3 │💣 │1 │
+│3 │2 │💣 │💣 │3 │1 │
+│4 │2 │4 │💣 │3 │1 │
+│5 │1 │💣 │3 │💣 │1 │
+└──┴──┴──┴──┴──┴──┘
+"#;
+
+    let mines = vec![
+        Point{x: 1, y: 0},
+        Point{x: 2, y: 1},
+        Point{x: 4, y: 1},
+        Point{x: 2, y: 2},
+        Point{x: 3, y: 2},
+        Point{x: 1, y: 3},
+        Point{x: 4, y: 3},
+    ];
+
+    let mut board = Board::new(5, mines);
+
+    let mut cursor: Cursor<Vec<u8>> = Cursor::new(Vec::new());
+
+    {
+        let mut writer = BoardWriter::new(&board, &mut cursor as &mut Write);
+        writer.print_solution();
+    }
+
+    assert_eq!(cursor.into_string(), expected);
 }
