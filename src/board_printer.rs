@@ -19,6 +19,11 @@ static BOTTOM_LEFT: &'static str = "└";
 static BOTTOM_MID: &'static str = "┴";
 static BOTTOM_RIGHT: &'static str = "┘";
 
+static MINE: &'static str = "💣 ";
+static EMPTY: &'static str = "  ";
+static UNREVEALED: &'static str = ". ";
+static FLAGGED: &'static str = "F ";
+
 impl<'a> BoardWriter<'a> {
     pub fn new(board: &'a Board, writer: &'a mut Write) -> BoardWriter<'a> {
         BoardWriter{board: board, writer: writer}
@@ -53,15 +58,17 @@ impl<'a> BoardWriter<'a> {
 
         for i in 0..self.board.size() {
             self.write(TOP.to_string());
+            self.write(TOP.to_string());
             self.write(TOP_MID.to_string());
         }
 
+        self.write(TOP.to_string());
         self.write(TOP.to_string());
         self.write(TOP_RIGHT.to_string());
         self.write("\n".to_string());
 
         self.write(MID.to_string());
-        self.write(" ".to_string());
+        self.write(EMPTY.to_string());
 
         for i in 0..self.board.size() {
             self.write(MID.to_string());
@@ -76,9 +83,11 @@ impl<'a> BoardWriter<'a> {
 
         for i in 0..self.board.size() {
             self.write(BOTTOM.to_string());
+            self.write(BOTTOM.to_string());
             self.write(BOTTOM_MID.to_string());
         }
 
+        self.write(BOTTOM.to_string());
         self.write(BOTTOM.to_string());
         self.write(BOTTOM_RIGHT.to_string());
         self.write("\n".to_string());
@@ -103,11 +112,11 @@ impl<'a> BoardWriter<'a> {
     fn print_cell(&mut self, cell: Cell, solution: bool) {
         if solution {
             if cell.mine {
-                self.write("*".to_string());
+                self.write(MINE.to_string());
             } else if cell.score > 0 {
-                self.write(cell.score.to_string());
+                self.write(format!("{} ", cell.score.to_string()));
             } else {
-                self.write(" ".to_string());
+                self.write(EMPTY.to_string());
             }
             return;
         }
@@ -162,7 +171,7 @@ fn test_print_header() {
         writer.print_header();
     }
 
-    assert_eq!(cursor.into_string(), "┌─┬─┬─┬─┬─┬─┐\n│ │1│2│3│4│5│\n");
+    assert_eq!(cursor.into_string(), "┌──┬──┬──┬──┬──┬──┐\n│  │1 │2 │3 │4 │5 │\n");
 }
 
 #[test]
@@ -175,7 +184,7 @@ fn test_print_footer() {
         writer.print_footer();
     }
 
-    assert_eq!(cursor.into_string(), "└─┴─┴─┴─┴─┴─┘\n");
+    assert_eq!(cursor.into_string(), "└──┴──┴──┴──┴──┴──┘\n");
 }
 
 #[test]
@@ -192,7 +201,7 @@ fn test_print_row() {
         writer.print_row(0, false);
     }
 
-    assert_eq!(cursor.into_string(), "│1│.│1│.│.│.│\n");
+    assert_eq!(cursor.into_string(), "│1 │. │1 │. │. │. │\n");
 }
 
 #[test]
@@ -207,7 +216,7 @@ fn test_print_hidden_cell() {
         writer.print_cell(cell, false);
     }
 
-    assert_eq!(cursor.into_string(), ".");
+    assert_eq!(cursor.into_string(), ". ");
 }
 
 #[test]
@@ -222,7 +231,7 @@ fn test_print_scored_cell() {
         writer.print_cell(cell, false);
     }
 
-    assert_eq!(cursor.into_string(), "8");
+    assert_eq!(cursor.into_string(), "8 ");
 }
 
 #[test]
@@ -237,7 +246,7 @@ fn test_print_zero_cell() {
         writer.print_cell(cell, false);
     }
 
-    assert_eq!(cursor.into_string(), " ");
+    assert_eq!(cursor.into_string(), "  ");
 }
 
 #[test]
@@ -252,7 +261,22 @@ fn test_print_mine_cell() {
         writer.print_cell(cell, false);
     }
 
-    assert_eq!(cursor.into_string(), "*");
+    assert_eq!(cursor.into_string(), "💣 ");
+}
+
+#[test]
+fn test_print_flagged_cell() {
+    let cell = Cell{mine: true, flagged: true, visible: false, score: 0};
+
+    let mut cursor: Cursor<Vec<u8>> = Cursor::new(Vec::new());
+
+    {
+        let board = Board::new(5, vec![]);
+        let mut writer = BoardWriter::new(&board, &mut cursor as &mut Write);
+        writer.print_cell(cell, false);
+    }
+
+    assert_eq!(cursor.into_string(), "F ");
 }
 
 #[test]
@@ -267,14 +291,15 @@ fn test_print() {
     }
     let expected =
 
- r#"┌─┬─┬─┬─┬─┬─┐
-│ │1│2│3│4│5│
-│1│.│.│.│.│.│
-│2│.│.│.│.│.│
-│3│.│.│.│.│.│
-│4│.│.│.│.│.│
-│5│.│.│.│.│.│
-└─┴─┴─┴─┴─┴─┘
+r#"┌──┬──┬──┬──┬──┬──┐
+│  │1 │2 │3 │4 │5 │
+│1 │. │. │. │. │. │
+│2 │. │. │. │. │. │
+│3 │. │. │. │. │. │
+│4 │. │. │. │. │. │
+│5 │. │. │. │. │. │
+└──┴──┴──┴──┴──┴──┘
+"#;
 
     assert_eq!(cursor.into_string(), expected);
 }
