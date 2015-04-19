@@ -72,10 +72,19 @@ impl<'a> BoardWriter<'a> {
 
         for i in 0..self.board.size() {
             self.write(MID.to_string());
-            self.write((i + 1).to_string());
+            self.print_label(i);
         }
         self.write(MID.to_string());
         self.write("\n".to_string());
+    }
+
+    fn print_label(&mut self, i: usize) {
+        let label = i + 1;
+        if label > 9 {
+            self.write(format!("{}", label.to_string()));
+        } else {
+            self.write(format!("{} ", label.to_string()));
+        }
     }
 
     fn print_footer(&mut self) {
@@ -95,7 +104,7 @@ impl<'a> BoardWriter<'a> {
 
     pub fn print_row(&mut self, y: usize, solution: bool) {
         self.write(MID.to_string());
-        self.write((y + 1).to_string());
+        self.print_label(y);
 
         for x in 0..self.board.size() {
             self.write(MID.to_string());
