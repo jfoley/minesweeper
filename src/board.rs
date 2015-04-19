@@ -10,6 +10,7 @@ pub struct Point {
 #[derive(Copy, Clone, Debug)]
 pub struct Cell {
     pub mine: bool,
+    pub flagged: bool,
     pub visible: bool,
     pub score: usize,
 }
@@ -27,6 +28,7 @@ impl Board {
             for x in 0..size {
                 let mut cell = Cell{
                     mine: false,
+                    flagged: false,
                     visible: false,
                     score: 0,
                 };

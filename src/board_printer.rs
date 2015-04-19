@@ -215,7 +215,7 @@ fn test_print_row() {
 
 #[test]
 fn test_print_hidden_cell() {
-    let cell = Cell{mine: false, visible: false, score: 8};
+    let cell = Cell{mine: false, flagged: false, visible: false, score: 8};
 
     let mut cursor: Cursor<Vec<u8>> = Cursor::new(Vec::new());
 
@@ -230,7 +230,7 @@ fn test_print_hidden_cell() {
 
 #[test]
 fn test_print_scored_cell() {
-    let cell = Cell{mine: false, visible: true, score: 8};
+    let cell = Cell{mine: false, flagged: false, visible: true, score: 8};
 
     let mut cursor: Cursor<Vec<u8>> = Cursor::new(Vec::new());
 
@@ -245,7 +245,7 @@ fn test_print_scored_cell() {
 
 #[test]
 fn test_print_zero_cell() {
-    let cell = Cell{mine: false, visible: true, score: 0};
+    let cell = Cell{mine: false, flagged: false, visible: true, score: 0};
 
     let mut cursor: Cursor<Vec<u8>> = Cursor::new(Vec::new());
 
@@ -260,7 +260,7 @@ fn test_print_zero_cell() {
 
 #[test]
 fn test_print_mine_cell() {
-    let cell = Cell{mine: true, visible: true, score: 0};
+    let cell = Cell{mine: true, flagged: false, visible: true, score: 0};
 
     let mut cursor: Cursor<Vec<u8>> = Cursor::new(Vec::new());
 
