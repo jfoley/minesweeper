@@ -144,7 +144,7 @@ impl<'a> BoardWriter<'a> {
     }
 }
 
-trait TestHelper {
+pub trait TestHelper {
     fn into_string(self) -> String;
 }
 
@@ -215,7 +215,7 @@ fn test_print_row() {
 
 #[test]
 fn test_print_hidden_cell() {
-    let cell = Cell{mine: false, flagged: false, visible: false, score: 8};
+    let cell = Cell{mine: false, flagged: false, visible: false, score: 8, coords: Point{x: 0, y: 0}};
 
     let mut cursor: Cursor<Vec<u8>> = Cursor::new(Vec::new());
 
@@ -230,7 +230,7 @@ fn test_print_hidden_cell() {
 
 #[test]
 fn test_print_scored_cell() {
-    let cell = Cell{mine: false, flagged: false, visible: true, score: 8};
+    let cell = Cell{mine: false, flagged: false, visible: true, score: 8, coords: Point{x: 0, y: 0}};
 
     let mut cursor: Cursor<Vec<u8>> = Cursor::new(Vec::new());
 
@@ -245,7 +245,7 @@ fn test_print_scored_cell() {
 
 #[test]
 fn test_print_zero_cell() {
-    let cell = Cell{mine: false, flagged: false, visible: true, score: 0};
+    let cell = Cell{mine: false, flagged: false, visible: true, score: 0, coords: Point{x: 0, y: 0}};
 
     let mut cursor: Cursor<Vec<u8>> = Cursor::new(Vec::new());
 
@@ -260,7 +260,7 @@ fn test_print_zero_cell() {
 
 #[test]
 fn test_print_mine_cell() {
-    let cell = Cell{mine: true, flagged: false, visible: true, score: 0};
+    let cell = Cell{mine: true, flagged: false, visible: true, score: 0, coords: Point{x: 0, y: 0}};
 
     let mut cursor: Cursor<Vec<u8>> = Cursor::new(Vec::new());
 
@@ -275,7 +275,7 @@ fn test_print_mine_cell() {
 
 #[test]
 fn test_print_flagged_cell() {
-    let cell = Cell{mine: true, flagged: true, visible: false, score: 0};
+    let cell = Cell{mine: true, flagged: true, visible: false, score: 0, coords: Point{x: 0, y: 0}};
 
     let mut cursor: Cursor<Vec<u8>> = Cursor::new(Vec::new());
 

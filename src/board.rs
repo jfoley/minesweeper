@@ -1,18 +1,21 @@
 extern crate rand;
 use self::rand::Rng;
 
-#[derive(PartialEq, Debug)]
+use std::collections::BTreeSet;
+
+#[derive(PartialEq, Eq, Copy, Clone, Debug, Default, PartialOrd, Ord)]
 pub struct Point {
     pub x: usize,
     pub y: usize,
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Default)]
 pub struct Cell {
     pub mine: bool,
     pub flagged: bool,
     pub visible: bool,
     pub score: usize,
+    pub coords: Point,
 }
 
 pub struct Board {
@@ -26,15 +29,17 @@ impl Board {
             let mut cell_row = Vec::with_capacity(size);
 
             for y in 0..size {
+                let point = Point{x: x, y: y};
                 let mut cell = Cell{
                     mine: false,
                     flagged: false,
                     visible: false,
                     score: 0,
+                    coords: point
                 };
 
 
-                let mine = mines.iter().find(|m| *m == &Point{x: x, y: y});
+                let mine = mines.iter().find(|m| *m == &point);
                 match mine {
                     Some(mine) => cell.mine = true,
                     None => cell.score = Board::score(&mines, size, x, y),
@@ -51,6 +56,81 @@ impl Board {
 
     pub fn size(&self) -> usize {
         self.cells.len()
+    }
+
+    pub fn uncover(&mut self, x: usize, y: usize) -> bool {
+        self.cells[x][y].visible = true;
+        if self.cells[x][y].score == 0 && !self.cells[x][y].mine {
+            self.uncover_neighbors(x, y);
+        }
+
+        self.cells[x][y].mine
+    }
+
+    pub fn flag(&mut self, x: usize, y: usize) -> bool {
+        self.cells[x][y].flagged = !self.cells[x][y].flagged;
+        let mines = self.mines();
+        let flags = self.flags();
+
+        if mines.len() == flags.len() {
+            let mine_set: BTreeSet<Point> = mines.iter().cloned().collect();
+            let flag_set: BTreeSet<Point> = flags.iter().cloned().collect();
+            let diff: Vec<Point> = mine_set.difference(&flag_set).cloned().collect();
+
+            if diff.len() == 0 {
+                true
+            } else {
+                false
+            }
+        } else {
+            false
+        }
+    }
+
+    fn mines(&self) -> Vec<Point> {
+        self.cells.iter().filter_map(|cell_row| {
+            let points: Vec<Point> = cell_row.iter().filter_map(|cell|
+                match cell.mine {
+                    true => Some(Point{x: cell.coords.x, y: cell.coords.y}),
+                    false => None
+                }
+            ).collect();
+
+            if points.len() > 0 {
+                Some(points)
+            } else {
+                None
+            }
+        }).fold(vec![], |acc, cells| {
+            if cells.len() > 0 {
+                acc + &cells
+            } else {
+                acc
+            }
+        })
+    }
+
+    fn flags(&self) -> Vec<Point> {
+        self.cells.iter().filter_map(|cell_row| {
+            let points: Vec<Point> = cell_row.iter().filter_map(|cell|
+                match cell.flagged {
+                    true => Some(Point{x: cell.coords.x, y: cell.coords.y}),
+                    false => None
+                }
+            ).collect();
+
+            if points.len() > 0 {
+                Some(points)
+            } else {
+                None
+            }
+        }).fold(vec![], |acc, cells| {
+            if cells.len() > 0 {
+                acc + &cells
+            } else {
+                acc
+            }
+        })
     }
 
     fn within_bounds(size: usize, x: isize, y: isize) -> bool {
@@ -88,15 +168,6 @@ impl Board {
         }
 
         neighbors
-    }
-
-    pub fn uncover(&mut self, x: usize, y: usize) -> bool {
-        self.cells[x][y].visible = true;
-        if self.cells[x][y].score == 0 && !self.cells[x][y].mine {
-            self.uncover_neighbors(x, y);
-        }
-
-        self.cells[x][y].mine
     }
 
     pub fn cell_at(&self, x: usize, y: usize) -> Cell {
@@ -294,6 +365,26 @@ fn neighbors_works() {
 
     let neighbors = Board::neighbors(3, 1, 0);
     assert_eq!(neighbors, expected);
+}
+
+#[test]
+fn test_flagging() {
+    let mines = vec![
+        Point{x:0, y: 1},
+    ];
+
+    let mut board = Board::new(2, mines);
+
+    // wrong guess
+    let result = board.flag(0, 0);
+    assert_eq!(result, false);
+
+    let result = board.flag(0, 1);
+    assert_eq!(result, false);
+
+    // right guess
+    let result = board.flag(0, 0);
+    assert_eq!(result, true);
 }
 
 #[test]
