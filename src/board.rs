@@ -298,6 +298,11 @@ fn neighbors_works() {
 
 #[test]
 fn complicated_scores() {
+    extern crate std;
+    use board_printer::BoardWriter;
+
+    use std::io::*;
+    use board_printer::TestHelper;
 let expected =
 r#"┌──┬──┬──┬──┬──┬──┐
 │  │1 │2 │3 │4 │5 │
