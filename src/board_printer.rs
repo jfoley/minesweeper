@@ -3,6 +3,10 @@ use std::io::{BufStream, Cursor, Write, Read};
 
 use board::{Board, Cell, Point};
 
+// extern crate rustspec_assertions;
+// use self::rustspec_assertions::expect;
+// use self::rustspec_assertions::matchers::equals::Equals;
+
 
 pub struct BoardWriter<'a> {
     board: &'a Board,

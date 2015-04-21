@@ -3,6 +3,7 @@ name = "minesweeper"
 version = "0.0.1"
 dependencies = [
  "rand 0.3.7 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rustspec_assertions 0.1.8",
 ]
 
 [[package]]
@@ -26,4 +27,8 @@ dependencies = [
  "libc 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
+
+[[package]]
+name = "rustspec_assertions"
+version = "0.1.8"
 

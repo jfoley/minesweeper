@@ -5,3 +5,6 @@ authors = ["John Foley <john@hisfoleyness.com>"]
 
 [dependencies]
 rand = "0.3"
+
+[dependencies.rustspec_assertions]
+path = "/Users/jfoley/Projects/Spectator/rustspec-assertions"
