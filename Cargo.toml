@@ -2,3 +2,19 @@
 name = "minesweeper"
 version = "0.0.1"
 authors = ["John Foley <john@hisfoleyness.com>"]
+
+[dependencies.piston]
+git = "https://github.com/PistonDevelopers/piston/"
+
+[dependencies.piston2d-graphics]
+git = "https://github.com/PistonDevelopers/graphics/"
+
+[dependencies.conrod]
+# git = "https://github.com/PistonDevelopers/conrod/"
+path = "/Users/jfoley/Projects/Spectator/conrod"
+
+[dependencies.piston2d-opengl_graphics]
+git = "https://github.com/PistonDevelopers/opengl_graphics/"
+
+[dependencies.pistoncore-glutin_window]
+git = "https://github.com/PistonDevelopers/glutin_window/"
