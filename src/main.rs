@@ -6,7 +6,7 @@ extern crate graphics;
 extern crate opengl_graphics;
 extern crate sdl2_window;
 
-use graphics::{ clear, rectangle, Image, character, text };
+use graphics::{ clear, rectangle, Image, character, text, Transformed };
 
 use opengl_graphics::glyph_cache::GlyphCache;
 use opengl_graphics::{Texture};
@@ -56,7 +56,6 @@ impl Renderable for Cell {
         context: graphics::Context,
         graphics: &mut opengl_graphics::GlGraphics,
         ctx: &mut RenderCtx) {
-        use graphics::Transformed;
 
         let rect = [
             size * self.coords.x as f64 + 1.0,
@@ -80,25 +79,27 @@ impl Renderable for Cell {
                   context.transform, graphics);
 
         if self.flagged {
-            nu_text::Text::colored([0.0, 0.0, 0.0, 1.0], size as u32)
-                .draw(
-                    "⚑",
-                    &mut ctx.cache,
-                    &context.draw_state,
-                    context.transform.trans(rect[0], rect[1]),
-                    graphics
-                );
+            Image::new()
+                .rect(rect)
+                .draw(&ctx.flag, &context.draw_state, context.transform, graphics);
+
         }
 
-        if self.visible && self.score != 0 {
-            text::Text::colored([0.0, 0.0, 0.0, 1.0], size as u32)
-                .draw(
-                    &self.score.to_string(),
-                    &mut ctx.cache,
-                    &context.draw_state,
-                    context.transform.trans(rect[0], rect[1] + size),
-                    graphics
-                );
+        if self.visible {
+            if self.mine {
+                Image::new()
+                    .rect(rect)
+                    .draw(&ctx.bomb, &context.draw_state, context.transform, graphics);
+            } else if self.score != 0 {
+                text::Text::colored([0.0, 0.0, 0.0, 1.0], size as u32)
+                    .draw(
+                        &self.score.to_string(),
+                        &mut ctx.cache,
+                        &context.draw_state,
+                        context.transform.trans(rect[0], rect[1] + size),
+                        graphics
+                    );
+            }
         }
     }
 }
@@ -111,14 +112,6 @@ impl Renderable for Board {
         ) {
         for x in 0..self.size() {
             for y in 0..self.size() {
-                // text::Text::colored([0.0, 0.0, 0.0, 1.0], size as u32)
-                    // .draw(
-                    //     "yo",
-                    //     &mut ctx.cache,
-                    //     &context.draw_state,
-                    //     context.transform,
-                    //     graphics
-                    // );
                 self.cells[x][y].render(context, graphics, ctx);
             }
         }
@@ -135,8 +128,14 @@ struct Mouse {
     right_called: bool,
 }
 
+struct GameState {
+    won: bool,
+    lost: bool,
+}
+
 struct RenderCtx<'a> {
     bomb: Texture,
+    flag: Texture,
     cache: GlyphCache<'a>
 }
 
@@ -151,9 +150,8 @@ fn main() {
   Point{x: 2, y: 2},
   ];
 
+  let mut game_state = GameState{won: false, lost: false};
   let mut board = Board::new(3, mines);
-
-  let font_path = Path::new("./assets/Ubuntu-R.ttf");
 
   let opengl = opengl_graphics::OpenGL::_3_2;
   let window = Sdl2Window::new(
@@ -169,11 +167,10 @@ fn main() {
 
   let mut mouse = Mouse{left: false, right: false, x: 0.0, y: 0.0, left_called: false, right_called: false};
 
-  // let rust_logo = Texture::from_path(&Path::new("./assets/rust.png")).unwrap();
-  // let bomb = Texture::from_path(&Path::new("./assets/bomb.png")).unwrap();
-
+  let font_path = Path::new("./assets/Ubuntu-R.ttf");
   let mut ctx = RenderCtx{
       bomb: Texture::from_path(&Path::new("./assets/bomb.png")).unwrap(),
+      flag: Texture::from_path(&Path::new("./assets/flag.png")).unwrap(),
       cache: GlyphCache::new(&font_path).unwrap()
   };
 
@@ -183,6 +180,28 @@ fn main() {
               |c, g| {
                 clear([1.0; 4], g);
                 board.render(c, g, &mut ctx);
+
+                if game_state.won {
+                    text::Text::colored([0.0, 0.0, 0.0, 1.0], 30)
+                        .draw(
+                            &"you won!".to_string(),
+                            &mut ctx.cache,
+                            &c.draw_state,
+                            c.transform.trans(0.0, (size * 3.0) / 2.0),
+                            g
+                        );
+                }
+
+                if game_state.lost {
+                    text::Text::colored([0.0, 0.0, 0.0, 1.0], 30)
+                        .draw(
+                            &"you lost...".to_string(),
+                            &mut ctx.cache,
+                            &c.draw_state,
+                            c.transform.trans(0.0, (size * 3.0) / 2.0),
+                            g
+                        );
+                }
               }
       );
     }
@@ -197,12 +216,16 @@ fn main() {
 
                 if cell.in_rect(&[mouse.x, mouse.y]) {
                     if mouse.left && !mouse.left_called {
-                        board.uncover(board_x, board_y);
+                        if board.uncover(board_x, board_y) {
+                            game_state.lost = true;
+                        }
                         mouse.left_called = true;
                     }
 
                     if mouse.right && !mouse.right_called {
-                        board.flag(x, y);
+                        if board.flag(x, y) {
+                            game_state.won = true;
+                        }
                         mouse.right_called = true;
                     }
                 }
