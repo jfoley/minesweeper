@@ -1,65 +1,127 @@
 #![feature(core)]
+#![feature(rand)]
 
 extern crate piston;
 extern crate graphics;
 extern crate opengl_graphics;
 extern crate sdl2_window;
 
-use graphics::{ clear, rectangle };
+use graphics::{ clear, rectangle, Image, character, text };
 
+use opengl_graphics::glyph_cache::GlyphCache;
+use opengl_graphics::{Texture};
 
+mod nu_text;
 use std::boxed::FnBox;
+use std::path::Path;
 
 use std::option::Option;
 
-const size: f64 = 100.0;
+const size: f64 = 50.0;
 
-#[derive(Clone)]
-struct Cell {
-    x: usize,
-    y: usize,
-    id: usize,
-}
+mod board;
+use board::Cell;
+use board::Point;
+use board::Board;
 
 impl Cell {
+    fn new(x: usize, y: usize) -> Cell {
+        Cell{flagged: false, mine: false, visible: false, score: 0, coords: Point{x: x, y: y}}
+    }
+
     fn in_rect(&self, xy: &[f64; 2]) -> bool {
         let x = xy[0];
         let y = xy[1];
 
-        let x_min = size * self.x as f64;
-        let y_min = size * self.y as f64;
+        let x_min = size * self.coords.x as f64;
+        let y_min = size * self.coords.y as f64;
 
         let x_max = x_min + size;
         let y_max = y_min + size;
 
         x >= x_min && x <= x_max && y >= y_min && y <= y_max
     }
-
-    fn click(&self) {
-        println!("click {}", self.id)
-    }
-
-    fn right_click(&self) {
-        println!("right click {}", self.id)
-    }
 }
 
 trait Renderable {
-    fn render(&self, context: graphics::Context, graphics: &mut opengl_graphics::GlGraphics);
+    fn render(&self,
+        context: graphics::Context,
+        graphics: &mut opengl_graphics::GlGraphics,
+        ctx: &mut RenderCtx,
+        );
 }
 
 impl Renderable for Cell {
-    fn render(&self, context: graphics::Context, graphics: &mut opengl_graphics::GlGraphics) {
+    fn render(&self,
+        context: graphics::Context,
+        graphics: &mut opengl_graphics::GlGraphics,
+        ctx: &mut RenderCtx) {
+        use graphics::Transformed;
+
         let rect = [
-            size * self.x as f64,
-            size * self.y as f64,
-            size,
-            size,
+            size * self.coords.x as f64 + 1.0,
+            size * self.coords.y as f64 + 1.0,
+            size - 2.0,
+            size - 2.0,
         ];
 
-        rectangle([1.0, 0.0, 0.0, 1.0],
+        let color = if self.visible {
+            if self.mine {
+                [0.7, 0.0, 0.0, 1.0]
+            } else {
+                [0.7, 0.7, 0.7, 1.0]
+            }
+        } else {
+            [0.5, 0.5, 0.5, 1.0]
+        };
+
+        rectangle(color,
                   rect,
                   context.transform, graphics);
+
+        if self.flagged {
+            nu_text::Text::colored([0.0, 0.0, 0.0, 1.0], size as u32)
+                .draw(
+                    "⚑",
+                    &mut ctx.cache,
+                    &context.draw_state,
+                    context.transform.trans(rect[0], rect[1]),
+                    graphics
+                );
+        }
+
+        if self.visible && self.score != 0 {
+            text::Text::colored([0.0, 0.0, 0.0, 1.0], size as u32)
+                .draw(
+                    &self.score.to_string(),
+                    &mut ctx.cache,
+                    &context.draw_state,
+                    context.transform.trans(rect[0], rect[1] + size),
+                    graphics
+                );
+        }
+    }
+}
+
+impl Renderable for Board {
+    fn render(&self,
+        context: graphics::Context,
+        graphics: &mut opengl_graphics::GlGraphics,
+        ctx: &mut RenderCtx,
+        ) {
+        for x in 0..self.size() {
+            for y in 0..self.size() {
+                // text::Text::colored([0.0, 0.0, 0.0, 1.0], size as u32)
+                    // .draw(
+                    //     "yo",
+                    //     &mut ctx.cache,
+                    //     &context.draw_state,
+                    //     context.transform,
+                    //     graphics
+                    // );
+                self.cells[x][y].render(context, graphics, ctx);
+            }
+        }
     }
 }
 
@@ -73,46 +135,76 @@ struct Mouse {
     right_called: bool,
 }
 
+struct RenderCtx<'a> {
+    bomb: Texture,
+    cache: GlyphCache<'a>
+}
+
 fn main() {
   use piston::window::{ WindowSettings, Size };
   use piston::event::*;
   use sdl2_window::Sdl2Window;
 
+  let mines = vec![
+  Point{x: 0, y: 0},
+  Point{x: 1, y: 1},
+  Point{x: 2, y: 2},
+  ];
+
+  let mut board = Board::new(3, mines);
+
+  let font_path = Path::new("./assets/Ubuntu-R.ttf");
+
   let opengl = opengl_graphics::OpenGL::_3_2;
   let window = Sdl2Window::new(
     opengl,
     WindowSettings::new("Hello Piston".to_string(),
-                        Size { width: 300, height: 300 })
+                        Size {
+                            width: (board.size() as f64 * size) as u32,
+                            height: (board.size() as f64 * size) as u32
+                            })
                        .exit_on_esc(true)
   );
   let ref mut gl = opengl_graphics::GlGraphics::new(opengl);
 
-  let cell1 = Cell{x: 1, y: 0, id: 1};
-  let cell2 = Cell{x: 0, y: 2, id: 2};
   let mut mouse = Mouse{left: false, right: false, x: 0.0, y: 0.0, left_called: false, right_called: false};
+
+  // let rust_logo = Texture::from_path(&Path::new("./assets/rust.png")).unwrap();
+  // let bomb = Texture::from_path(&Path::new("./assets/bomb.png")).unwrap();
+
+  let mut ctx = RenderCtx{
+      bomb: Texture::from_path(&Path::new("./assets/bomb.png")).unwrap(),
+      cache: GlyphCache::new(&font_path).unwrap()
+  };
 
   for e in window.events() {
     if let Some(args) = e.render_args() {
       gl.draw(args.viewport(),
               |c, g| {
                 clear([1.0; 4], g);
-                cell1.render(c, g);
-                cell2.render(c, g);
+                board.render(c, g, &mut ctx);
               }
       );
     }
 
     e.update(|dt| {
-        for cell in [cell1.clone(), cell2.clone()].iter() {
-            if cell.in_rect(&[mouse.x, mouse.y]) {
-                if mouse.left && !mouse.left_called {
-                    cell.click();
-                    mouse.left_called = true;
-                }
+        let board_x = (mouse.x / size) as usize;
+        let board_y = (mouse.y / size) as usize;
 
-                if mouse.right && !mouse.right_called {
-                    cell.right_click();
-                    mouse.right_called = true;
+        for x in 0..board.size() {
+            for y in 0..board.size() {
+                let cell = board.cells[x][y];
+
+                if cell.in_rect(&[mouse.x, mouse.y]) {
+                    if mouse.left && !mouse.left_called {
+                        board.uncover(board_x, board_y);
+                        mouse.left_called = true;
+                    }
+
+                    if mouse.right && !mouse.right_called {
+                        board.flag(x, y);
+                        mouse.right_called = true;
+                    }
                 }
             }
         }

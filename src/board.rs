@@ -22,6 +22,8 @@ pub struct Board {
     pub cells: Vec<Vec<Cell>>
 }
 
+// flag: ⚑
+
 impl Board {
     pub fn new(size: usize, mines: Vec<Point>) -> Board {
         let mut cells = Vec::with_capacity(size);
